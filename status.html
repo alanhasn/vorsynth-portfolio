@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VORSYNTH system status and live technical telemetry." />
+  <meta name="theme-color" content="#050810" />
+  <title>VORSYNTH — System Status</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+  <header id="statusbar">
+    <div class="sb-left">
+      <span class="sb-tag">VORSYNTH</span>
+      <span class="sb-sep">|</span>
+      <span class="sb-item blink-dot">● STATUS</span>
+    </div>
+    <div class="sb-center">
+      <div class="page-title">SYSTEM STATUS</div>
+    </div>
+    <div class="sb-right">
+      <a href="index.html" class="fb-link">BACK TO DASHBOARD</a>
+    </div>
+  </header>
+
+  <main class="status-page">
+    <section class="page-panel">
+      <div class="panel-header">
+        <span class="panel-icon">▸</span>
+        <span>TELEMETRY DASHBOARD</span>
+        <div class="panel-dots"><span></span><span></span><span></span></div>
+      </div>
+      <div class="panel-body">
+        <div class="status-grid">
+          <div class="status-card">
+            <div class="status-card-label">GITHUB REPOSITORIES</div>
+            <div class="status-card-value" id="gh-repo-count">--</div>
+            <div class="status-card-note">Public repos updated in real time.</div>
+          </div>
+          <div class="status-card">
+            <div class="status-card-label">TOTAL STARS</div>
+            <div class="status-card-value" id="gh-stars">--</div>
+            <div class="status-card-note">Accrued open-source visibility.</div>
+          </div>
+          <div class="status-card">
+            <div class="status-card-label">LATEST PUSH</div>
+            <div class="status-card-value" id="gh-latest-push">--</div>
+            <div class="status-card-note">Most recently updated repository timestamp.</div>
+          </div>
+          <div class="status-card">
+            <div class="status-card-label">OPEN ISSUE SIGNAL</div>
+            <div class="status-card-value" id="gh-open-issues">--</div>
+            <div class="status-card-note">Open issue volume across tracked repos.</div>
+          </div>
+        </div>
+
+        <div class="status-snapshot">
+          <div class="status-snapshot-title">Deployment health</div>
+          <div class="status-row"><span>Live services</span><span id="deploy-live">--</span></div>
+          <div class="status-row"><span>Average uptime</span><span id="deploy-uptime">--</span></div>
+          <div class="status-row"><span>Recent GitHub activity</span><span id="deploy-activity">--</span></div>
+        </div>
+
+        <div class="status-panel-large">
+          <div class="panel-section">
+            <div class="panel-subtitle">Recent GitHub events</div>
+            <div class="status-event-list" id="gh-event-list"></div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-subtitle">Top repositories</div>
+            <div class="repo-grid" id="gh-repo-list"></div>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-subtitle">Active systems</div>
+          <div class="repo-grid" id="deploy-system-list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="footerbar">
+    <div class="fb-left">
+      <span class="fb-item">STATUS PAGE</span>
+    </div>
+    <div class="fb-center">
+      <span id="status-msg" aria-live="polite">LOADING SYSTEM METRICS...</span>
+    </div>
+    <div class="fb-right">
+      <a href="https://github.com/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">GITHUB</a>
+    </div>
+  </footer>
+
+  <script src="js/projects.js"></script>
+  <script src="js/status.js"></script>
+</body>
+</html>

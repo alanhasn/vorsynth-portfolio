@@ -1,0 +1,2179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VORSYNTH — System Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+/* ═══════════════════════════════════════════════════
+   VORSYNTH PORTFOLIO — DESIGN SYSTEM
+   Concept: Backend Engineer's OS / Command Center
+   ═══════════════════════════════════════════════════ */
+
+/* ── TOKENS ── */
+:root {
+  --bg:         #050810;
+  --bg-panel:   #080d1a;
+  --bg-panel2:  #0a1020;
+  --border:     #0f2040;
+  --border-hl:  #1a3560;
+  --cyan:       #00d9ff;
+  --cyan-dim:   #00d9ff44;
+  --cyan-glow:  #00d9ff22;
+  --green:      #00ff88;
+  --green-dim:  #00ff8833;
+  --orange:     #ff6b35;
+  --orange-dim: #ff6b3522;
+  --red:        #ff3366;
+  --yellow:     #ffd700;
+  --text-hi:    #e8f4ff;
+  --text-mid:   #7a9cc0;
+  --text-lo:    #3a5070;
+  --font-mono:  'IBM Plex Mono', 'Space Mono', monospace;
+  --font-ui:    'Rajdhani', sans-serif;
+  --radius:     2px;
+  --gap:        16px;
+  --panel-pad:  20px;
+  --transition: 200ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* ── RESET ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; }
+body {
+  background: var(--bg);
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  overflow: hidden;
+  height: 100vh;
+  width: 100vw;
+  cursor: none;
+  user-select: none;
+}
+a { color: var(--cyan); text-decoration: none; }
+button { cursor: none; background: none; border: none; font-family: inherit; }
+input { cursor: none; }
+
+/* ── SCANLINES ── */
+#scanlines {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,0,0,0.06) 2px,
+    rgba(0,0,0,0.06) 4px
+  );
+}
+
+/* ── CUSTOM CURSOR ── */
+#cursor {
+  position: fixed;
+  width: 12px; height: 12px;
+  border: 1.5px solid var(--cyan);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 10000;
+  transition: transform 80ms, border-color 200ms;
+  mix-blend-mode: difference;
+}
+#cursor.hover { transform: translate(-50%, -50%) scale(2.2); border-color: var(--green); }
+#cursor-trail {
+  position: fixed;
+  width: 4px; height: 4px;
+  background: var(--cyan);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.5;
+  transition: left 120ms, top 120ms;
+}
+
+/* ── BG CANVAS ── */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ══════════════════════════════
+   BOOT OVERLAY
+══════════════════════════════ */
+#boot-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+  z-index: 5000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 600ms ease, visibility 600ms;
+}
+#boot-overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+#boot-screen {
+  width: min(560px, 90vw);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+#boot-logo {
+  font-family: var(--font-mono);
+  font-size: clamp(28px, 5vw, 48px);
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.boot-bracket { color: var(--text-lo); }
+.boot-name {
+  color: var(--cyan);
+  text-shadow: 0 0 30px var(--cyan);
+}
+
+#boot-log {
+  font-size: 11px;
+  color: var(--text-mid);
+  line-height: 1.8;
+  height: 120px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+#boot-log .log-line { opacity: 0; animation: fadeInLine 0.2s forwards; }
+@keyframes fadeInLine { to { opacity: 1; } }
+
+#boot-bar-wrap {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+#boot-bar {
+  flex: 1;
+  height: 2px;
+  background: var(--border);
+  position: relative;
+  overflow: hidden;
+}
+#boot-bar::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: var(--progress, 0%);
+  background: var(--cyan);
+  box-shadow: 0 0 8px var(--cyan);
+  transition: width 80ms linear;
+}
+#boot-pct { color: var(--cyan); font-size: 11px; width: 36px; text-align: right; }
+#boot-status { font-size: 11px; color: var(--text-lo); letter-spacing: 0.1em; }
+
+/* ══════════════════════════════
+   STATUS BAR
+══════════════════════════════ */
+#statusbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 36px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+}
+
+.sb-left, .sb-right { display: flex; align-items: center; gap: 10px; color: var(--text-mid); flex: 1; }
+.sb-right { justify-content: flex-end; }
+.sb-center { flex: 2; display: flex; justify-content: center; }
+.sb-tag { color: var(--cyan); font-weight: 600; font-size: 12px; letter-spacing: 0.15em; }
+.sb-sep { color: var(--text-lo); }
+.sb-item { color: var(--text-mid); }
+.cpu-meter { color: var(--text-mid); font-variant-numeric: tabular-nums; }
+
+.blink-dot { color: var(--green); }
+.blink-dot::before { animation: blink 1.4s infinite; }
+@keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.2; } }
+
+/* ── NAV TABS ── */
+#nav-tabs {
+  display: flex;
+  gap: 2px;
+}
+.nav-tab {
+  padding: 6px 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-lo);
+  border-bottom: 2px solid transparent;
+  transition: var(--transition);
+  position: relative;
+}
+.nav-tab:hover { color: var(--text-mid); }
+.nav-tab.active {
+  color: var(--cyan);
+  border-bottom-color: var(--cyan);
+}
+
+/* ══════════════════════════════
+   WORKSPACE
+══════════════════════════════ */
+#workspace {
+  position: fixed;
+  top: 36px;
+  bottom: 28px;
+  left: 0;
+  right: 0;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.ws-section {
+  position: absolute;
+  inset: 0;
+  padding: var(--gap);
+  overflow-y: auto;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 300ms ease, transform 300ms ease;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-hl) transparent;
+}
+.ws-section::-webkit-scrollbar { width: 4px; }
+.ws-section::-webkit-scrollbar-track { background: transparent; }
+.ws-section::-webkit-scrollbar-thumb { background: var(--border-hl); border-radius: 2px; }
+.ws-section.active { opacity: 1; pointer-events: all; transform: translateY(0); }
+
+/* ══════════════════════════════
+   PANEL BASE
+══════════════════════════════ */
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transition: border-color 250ms, box-shadow 250ms;
+  position: relative;
+}
+.panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--cyan-dim), transparent);
+  opacity: 0;
+  transition: opacity 300ms;
+}
+.panel:hover { border-color: var(--border-hl); box-shadow: 0 0 20px rgba(0,217,255,0.04); }
+.panel:hover::before { opacity: 1; }
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  color: var(--text-mid);
+  background: rgba(0,217,255,0.02);
+  flex-shrink: 0;
+}
+.panel-icon { color: var(--cyan); font-size: 10px; }
+.panel-dots { margin-left: auto; display: flex; gap: 5px; }
+.panel-dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--border-hl); }
+.live-badge {
+  margin-left: 6px;
+  padding: 1px 6px;
+  background: var(--green-dim);
+  border: 1px solid var(--green);
+  color: var(--green);
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  animation: livePulse 2s infinite;
+}
+@keyframes livePulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+.panel-body { padding: var(--panel-pad); flex: 1; overflow: hidden; }
+
+/* ══════════════════════════════
+   OVERVIEW GRID
+══════════════════════════════ */
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: auto auto;
+  gap: var(--gap);
+  height: 100%;
+  grid-template-areas:
+    "identity telemetry activity"
+    "network  network   philosophy";
+}
+
+.panel-identity    { grid-area: identity; }
+.panel-telemetry   { grid-area: telemetry; }
+.panel-activity    { grid-area: activity; }
+.panel-network     { grid-area: network; }
+.panel-philosophy  { grid-area: philosophy; }
+
+/* Identity */
+.identity-name {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  margin-bottom: 16px;
+  line-height: 1;
+}
+.id-pre { color: var(--text-lo); font-size: 16px; }
+.id-text { color: var(--cyan); text-shadow: 0 0 20px var(--cyan-dim); }
+
+.identity-roles { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
+.role-line { display: flex; gap: 12px; font-size: 11px; }
+.role-key { color: var(--text-lo); min-width: 36px; letter-spacing: 0.1em; }
+.role-val { color: var(--text-mid); }
+
+.identity-status { display: flex; gap: 8px; flex-wrap: wrap; }
+.status-chip {
+  padding: 3px 10px;
+  border: 1px solid var(--border-hl);
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--text-lo);
+}
+.status-chip.active { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+
+/* Telemetry */
+.telem-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.telem-item { display: flex; flex-direction: column; gap: 4px; }
+.telem-label { font-size: 9px; letter-spacing: 0.14em; color: var(--text-lo); }
+.telem-value { font-size: 28px; font-weight: 700; color: var(--cyan); line-height: 1; font-variant-numeric: tabular-nums; }
+.telem-bar { height: 2px; background: var(--border); border-radius: 1px; overflow: hidden; }
+.telem-fill {
+  height: 100%;
+  width: var(--pct, 0%);
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  border-radius: 1px;
+  animation: barFill 1.5s ease forwards;
+  transform-origin: left;
+}
+@keyframes barFill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* Activity */
+.panel-activity .panel-body { padding: 10px 14px; overflow: hidden; }
+#activity-feed { display: flex; flex-direction: column; gap: 6px; }
+.activity-line {
+  display: flex; gap: 10px; font-size: 10px; letter-spacing: 0.04em;
+  animation: slidein 0.3s ease;
+  opacity: 0;
+  animation-fill-mode: forwards;
+}
+@keyframes slidein { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: translateX(0); } }
+.act-time { color: var(--text-lo); width: 50px; flex-shrink: 0; font-variant-numeric: tabular-nums; }
+.act-type { width: 60px; flex-shrink: 0; }
+.act-type.commit  { color: var(--cyan); }
+.act-type.deploy  { color: var(--green); }
+.act-type.scan    { color: var(--orange); }
+.act-type.alert   { color: var(--red); }
+.act-msg { color: var(--text-mid); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Network canvas */
+.panel-network .panel-body { padding: 0; position: relative; }
+#network-canvas { width: 100%; height: 100%; display: block; }
+.network-legend {
+  position: absolute;
+  bottom: 10px; right: 14px;
+  display: flex; gap: 12px; font-size: 9px; letter-spacing: 0.1em; color: var(--text-lo);
+}
+.leg-item { display: flex; align-items: center; gap: 5px; }
+.leg-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); }
+
+/* Directives */
+.directive-list { display: flex; flex-direction: column; gap: 10px; }
+.directive { display: flex; gap: 12px; align-items: flex-start; }
+.dir-n { color: var(--cyan); font-size: 10px; opacity: 0.5; min-width: 20px; padding-top: 1px; }
+.dir-t { color: var(--text-mid); font-size: 11px; line-height: 1.5; }
+
+/* ══════════════════════════════
+   STACK SECTION
+══════════════════════════════ */
+.stack-layout { display: flex; flex-direction: column; gap: 24px; }
+.section-title {
+  font-family: var(--font-ui);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  color: var(--text-hi);
+}
+.section-sub { font-size: 11px; color: var(--text-lo); letter-spacing: 0.1em; margin-top: 4px; }
+
+.stack-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 10px;
+}
+.stack-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: none;
+  transition: border-color 200ms, transform 200ms, box-shadow 200ms;
+  position: relative;
+  overflow: hidden;
+}
+.stack-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at var(--mx,50%) var(--my,50%), var(--card-color,var(--cyan-glow)) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 300ms;
+}
+.stack-card:hover::before { opacity: 1; }
+.stack-card:hover {
+  border-color: var(--card-border, var(--border-hl));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+}
+
+.stack-icon { font-size: 24px; }
+.stack-name { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-hi); }
+.stack-cat { font-size: 9px; letter-spacing: 0.12em; color: var(--text-lo); }
+.stack-level {
+  height: 2px;
+  background: var(--border);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.stack-level-fill {
+  height: 100%;
+  border-radius: 1px;
+  background: var(--card-accent, var(--cyan));
+  transform-origin: left;
+  transform: scaleX(0);
+  transition: transform 800ms cubic-bezier(0.2, 0, 0, 1);
+}
+.stack-card.visible .stack-level-fill { transform: scaleX(1); }
+
+/* ══════════════════════════════
+   OPS SECTION
+══════════════════════════════ */
+.ops-layout { display: flex; flex-direction: column; gap: 24px; }
+.ops-domains { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+
+.ops-domain {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  transition: border-color 250ms, box-shadow 250ms;
+}
+.ops-domain:hover { border-color: var(--border-hl); box-shadow: 0 0 24px rgba(0,217,255,0.04); }
+
+.ops-domain-header {
+  display: flex; align-items: center; gap: 12px; margin-bottom: 16px;
+}
+.ops-domain-icon { font-size: 20px; }
+.ops-domain-name {
+  font-family: var(--font-ui);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  color: var(--text-hi);
+}
+.ops-domain-tag {
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid;
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+}
+
+.ops-skills { display: flex; flex-wrap: wrap; gap: 6px; }
+.ops-skill {
+  padding: 4px 10px;
+  background: var(--bg-panel2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--text-mid);
+}
+
+/* ══════════════════════════════
+   PROJECTS SECTION
+══════════════════════════════ */
+.projects-layout { display: flex; flex-direction: column; gap: 24px; }
+.proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+
+.proj-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  transition: border-color 250ms, box-shadow 250ms;
+  position: relative;
+}
+.proj-card:hover { border-color: var(--border-hl); box-shadow: 0 0 30px rgba(0,217,255,0.06); }
+
+.proj-card-top {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 10px;
+}
+.proj-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: projPulse 2s infinite;
+}
+.proj-status-dot.online  { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.proj-status-dot.active  { background: var(--cyan); box-shadow: 0 0 6px var(--cyan); }
+.proj-status-dot.staging { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
+@keyframes projPulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+.proj-name { font-size: 13px; font-weight: 600; letter-spacing: 0.1em; color: var(--text-hi); flex: 1; }
+.proj-type { font-size: 9px; letter-spacing: 0.12em; color: var(--text-lo); }
+
+.proj-card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.proj-desc { font-size: 11px; color: var(--text-mid); line-height: 1.6; }
+.proj-meta { display: flex; flex-direction: column; gap: 5px; }
+.proj-meta-row { display: flex; gap: 10px; font-size: 10px; }
+.proj-meta-key { color: var(--text-lo); min-width: 44px; letter-spacing: 0.08em; }
+.proj-meta-val { color: var(--text-mid); }
+
+.proj-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.proj-tag {
+  padding: 2px 8px;
+  background: var(--bg-panel2);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  color: var(--text-lo);
+}
+
+.proj-footer {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 10px;
+}
+.proj-uptime { color: var(--text-lo); flex: 1; }
+.proj-link {
+  padding: 4px 12px;
+  border: 1px solid var(--border-hl);
+  border-radius: 2px;
+  color: var(--text-mid);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  transition: var(--transition);
+}
+.proj-link:hover { border-color: var(--cyan); color: var(--cyan); background: var(--cyan-glow); }
+
+/* ══════════════════════════════
+   TERMINAL SECTION
+══════════════════════════════ */
+.terminal-layout {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  font-size: 13px;
+}
+
+.term-header-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 14px;
+  background: var(--bg-panel2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.term-dot { width: 11px; height: 11px; border-radius: 50%; }
+.term-dot.red    { background: #ff5f57; }
+.term-dot.yellow { background: #ffbd2e; }
+.term-dot.green  { background: #28c840; }
+.term-title { margin-left: 8px; font-size: 12px; color: var(--text-lo); letter-spacing: 0.06em; }
+
+#term-output {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.term-line { line-height: 1.6; animation: termAppear 0.15s ease; }
+@keyframes termAppear { from { opacity: 0; } to { opacity: 1; } }
+.term-line.cmd  { color: var(--cyan); }
+.term-line.out  { color: var(--text-mid); }
+.term-line.ok   { color: var(--green); }
+.term-line.err  { color: var(--red); }
+.term-line.warn { color: var(--yellow); }
+.term-line.info { color: var(--text-lo); }
+.term-line.h1   { color: var(--cyan); font-weight: 700; font-size: 15px; letter-spacing: 0.08em; margin-top: 4px; }
+
+.term-input-row {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  border-top: 1px solid var(--border);
+  gap: 4px;
+  flex-shrink: 0;
+}
+.term-prompt { color: var(--cyan); white-space: nowrap; font-size: 13px; }
+#term-input {
+  flex: 1;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text-hi);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  caret-color: var(--cyan);
+}
+
+/* ══════════════════════════════
+   FOOTER BAR
+══════════════════════════════ */
+#footerbar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 28px;
+  background: var(--bg-panel);
+  border-top: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 100;
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.fb-left, .fb-right { display: flex; align-items: center; gap: 8px; color: var(--text-lo); }
+.fb-center { color: var(--text-lo); }
+.fb-sep { color: var(--border-hl); }
+.fb-link { color: var(--text-lo); transition: color 200ms; }
+.fb-link:hover { color: var(--cyan); }
+
+/* ══════════════════════════════
+   RESPONSIVE
+══════════════════════════════ */
+@media (max-width: 900px) {
+  .overview-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-areas:
+      "identity  telemetry"
+      "activity  activity"
+      "network   network"
+      "philosophy philosophy";
+  }
+  .ops-domains { grid-template-columns: 1fr; }
+}
+@media (max-width: 600px) {
+  body { overflow: auto; }
+  #workspace { position: relative; top: 36px; bottom: 28px; height: auto; }
+  .ws-section { position: relative; overflow: visible; height: auto; }
+  .overview-grid {
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "identity"
+      "telemetry"
+      "activity"
+      "network"
+      "philosophy";
+  }
+  .panel-network { height: 260px; }
+  .section-title { font-size: 18px; }
+}
+
+/* ── UTILS ── */
+.glitch {
+  animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+}
+@keyframes glitch {
+  0%, 100% { transform: none; }
+  20% { transform: skewX(0.5deg); }
+  40% { transform: skewX(-0.5deg); }
+}
+
+  </style>
+</head>
+<body>
+
+<!-- ── BOOT SEQUENCE OVERLAY ── -->
+<div id="boot-overlay">
+  <div id="boot-screen">
+    <div id="boot-logo">
+      <span class="boot-bracket">[</span>
+      <span class="boot-name">VORSYNTH</span>
+      <span class="boot-bracket">]</span>
+    </div>
+    <div id="boot-log"></div>
+    <div id="boot-bar-wrap">
+      <div id="boot-bar"></div>
+      <span id="boot-pct">0%</span>
+    </div>
+    <div id="boot-status">INITIALIZING SYSTEM...</div>
+  </div>
+</div>
+
+<!-- ── SCAN LINE EFFECT ── -->
+<div id="scanlines"></div>
+
+<!-- ── CURSOR ── -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ── BACKGROUND GRID ── -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── TOP STATUSBAR ── -->
+<header id="statusbar">
+  <div class="sb-left">
+    <span class="sb-tag">VORSYNTH</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item blink-dot">● ONLINE</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item">SYS v2.4.1</span>
+  </div>
+  <div class="sb-center">
+    <nav id="nav-tabs">
+      <button class="nav-tab active" data-section="overview">OVERVIEW</button>
+      <button class="nav-tab" data-section="stack">STACK</button>
+      <button class="nav-tab" data-section="ops">OPS</button>
+      <button class="nav-tab" data-section="projects">SYSTEMS</button>
+      <button class="nav-tab" data-section="terminal">TERMINAL</button>
+    </nav>
+  </div>
+  <div class="sb-right">
+    <span class="sb-item" id="live-time"></span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item">UTC+3</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item cpu-meter">CPU <span id="cpu-val">--</span>%</span>
+  </div>
+</header>
+
+<!-- ── MAIN WORKSPACE ── -->
+<main id="workspace">
+
+  <!-- ═══ SECTION: OVERVIEW ═══ -->
+  <section id="overview" class="ws-section active">
+    <div class="overview-grid">
+
+      <!-- Identity panel -->
+      <div class="panel panel-identity" data-panel="identity">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>IDENTITY.SYS</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="identity-name">
+            <span class="id-pre">~$ </span>
+            <span class="id-text typewriter" data-text="VORSYNTH">VORSYNTH</span>
+          </div>
+          <div class="identity-roles">
+            <div class="role-line"><span class="role-key">ROLE</span><span class="role-val">Backend Engineer · DevOps · Security</span></div>
+            <div class="role-line"><span class="role-key">SPEC</span><span class="role-val">Distributed Systems · API Architecture</span></div>
+            <div class="role-line"><span class="role-key">INT</span><span class="role-val">Reverse Engineering · Android Internals</span></div>
+            <div class="role-line"><span class="role-key">PHI</span><span class="role-val">Security-first · Deep over surface</span></div>
+          </div>
+          <div class="identity-status">
+            <span class="status-chip active">● AVAILABLE</span>
+            <span class="status-chip">⬡ REMOTE</span>
+            <span class="status-chip">⚑ BACKEND</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry panel -->
+      <div class="panel panel-telemetry" data-panel="telemetry">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>SYS.TELEMETRY</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="telem-grid">
+            <div class="telem-item">
+              <div class="telem-label">PROJECTS</div>
+              <div class="telem-value counter" data-target="12">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:80%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">COMMITS</div>
+              <div class="telem-value counter" data-target="312">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:62%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">TOOLS PUBLISHED</div>
+              <div class="telem-value counter" data-target="2">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:40%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">UPTIME</div>
+              <div class="telem-value" id="uptime-val">365d</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:100%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity feed -->
+      <div class="panel panel-activity" data-panel="activity">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>ACTIVITY.LOG</span>
+          <span class="live-badge">LIVE</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div id="activity-feed"></div>
+        </div>
+      </div>
+
+      <!-- Network map -->
+      <div class="panel panel-network" data-panel="network">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>NETWORK.MAP</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <canvas id="network-canvas"></canvas>
+          <div class="network-legend">
+            <span class="leg-item"><span class="leg-dot" style="--c:#00d9ff"></span>CORE</span>
+            <span class="leg-item"><span class="leg-dot" style="--c:#00ff88"></span>SERVICE</span>
+            <span class="leg-item"><span class="leg-dot" style="--c:#ff6b35"></span>SECURITY</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Philosophy -->
+      <div class="panel panel-philosophy" data-panel="philosophy">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>CORE.DIRECTIVES</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="directive-list">
+            <div class="directive"><span class="dir-n">01</span><span class="dir-t">Security is architecture — not a feature bolted on later</span></div>
+            <div class="directive"><span class="dir-n">02</span><span class="dir-t">Read the source. The docs lie. The code does not.</span></div>
+            <div class="directive"><span class="dir-n">03</span><span class="dir-t">Understand the protocol before touching the library</span></div>
+            <div class="directive"><span class="dir-n">04</span><span class="dir-t">Break systems deliberately. Fix with precision.</span></div>
+            <div class="directive"><span class="dir-n">05</span><span class="dir-t">Automate the repeatable. Think harder on the novel.</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: STACK ═══ -->
+  <section id="stack" class="ws-section">
+    <div class="stack-layout">
+      <div class="stack-header">
+        <h2 class="section-title">TECHNOLOGY MATRIX</h2>
+        <p class="section-sub">Runtime environment · Registered modules</p>
+      </div>
+      <div class="stack-grid" id="stack-grid"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: OPS ═══ -->
+  <section id="ops" class="ws-section">
+    <div class="ops-layout">
+      <div class="ops-header">
+        <h2 class="section-title">OPERATIONAL PROFILE</h2>
+        <p class="section-sub">Engineering roles · Domain expertise</p>
+      </div>
+      <div class="ops-domains" id="ops-domains"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: PROJECTS / SYSTEMS ═══ -->
+  <section id="projects" class="ws-section">
+    <div class="projects-layout">
+      <div class="proj-header">
+        <h2 class="section-title">DEPLOYED SYSTEMS</h2>
+        <p class="section-sub">Active infrastructure · Production services</p>
+      </div>
+      <div class="proj-grid" id="proj-grid"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: TERMINAL ═══ -->
+  <section id="terminal" class="ws-section">
+    <div class="terminal-layout">
+      <div class="term-header-bar">
+        <span class="term-dot red"></span>
+        <span class="term-dot yellow"></span>
+        <span class="term-dot green"></span>
+        <span class="term-title">vorsynth@backend:~</span>
+      </div>
+      <div id="term-output"></div>
+      <div class="term-input-row">
+        <span class="term-prompt">vorsynth@backend:~$ </span>
+        <input type="text" id="term-input" autocomplete="off" spellcheck="false" placeholder="type 'help' to begin" />
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── BOTTOM STATUS BAR ── -->
+<footer id="footerbar">
+  <div class="fb-left">
+    <span class="fb-item">⬡ BACKEND</span>
+    <span class="fb-sep">·</span>
+    <span class="fb-item">⬡ SECURITY</span>
+    <span class="fb-sep">·</span>
+    <span class="fb-item">⬡ DEVOPS</span>
+  </div>
+  <div class="fb-center">
+    <span id="status-msg">SYSTEM OPERATIONAL</span>
+  </div>
+  <div class="fb-right">
+    <a href="https://github.com/alanhasn" target="_blank" class="fb-link">GITHUB</a>
+    <span class="fb-sep">·</span>
+    <a href="https://pypi.org/user/alanhasn" target="_blank" class="fb-link">PYPI</a>
+  </div>
+</footer>
+
+<script>
+// ── BOOT ──
+/* ═══════════════════════════════════════
+   BOOT.JS — Boot sequence animation
+   ═══════════════════════════════════════ */
+
+const BOOT_LINES = [
+  '[0.001] BIOS v4.2.1 — Vorsynth Systems',
+  '[0.044] CPU: Backend-Core x8 @ 4.2GHz',
+  '[0.091] RAM: 32GB DDR5 — OK',
+  '[0.134] Loading kernel modules...',
+  '[0.201] Mounting /proc/identity... OK',
+  '[0.278] Mounting /etc/stack... OK',
+  '[0.355] Mounting /var/projects... OK',
+  '[0.412] Starting sshd... OK',
+  '[0.489] Starting redis-server... OK',
+  '[0.534] Starting postgresql@15... OK',
+  '[0.611] Starting docker daemon... OK',
+  '[0.688] Loading security modules...',
+  '[0.744] sec_audit.ko loaded',
+  '[0.801] net_monitor.ko loaded',
+  '[0.878] Starting activity daemon... OK',
+  '[0.921] Initializing network map... OK',
+  '[0.967] All systems nominal.',
+  '[1.002] VORSYNTH OS — Ready.',
+];
+
+function bootSequence() {
+  const overlay  = document.getElementById('boot-overlay');
+  const logEl    = document.getElementById('boot-log');
+  const barEl    = document.getElementById('boot-bar');
+  const pctEl    = document.getElementById('boot-pct');
+  const statusEl = document.getElementById('boot-status');
+
+  let lineIdx = 0;
+  const total = BOOT_LINES.length;
+
+  function addLine() {
+    if (lineIdx >= total) {
+      // Done — fade out
+      statusEl.textContent = 'BOOT COMPLETE — LAUNCHING INTERFACE';
+      setTimeout(() => {
+        overlay.classList.add('hidden');
+        window.dispatchEvent(new Event('boot-complete'));
+      }, 500);
+      return;
+    }
+
+    const line = document.createElement('div');
+    line.className = 'log-line';
+    line.textContent = BOOT_LINES[lineIdx];
+    logEl.appendChild(line);
+
+    // Keep only last 7 lines visible
+    const lines = logEl.querySelectorAll('.log-line');
+    if (lines.length > 7) lines[0].remove();
+
+    lineIdx++;
+    const pct = Math.round((lineIdx / total) * 100);
+    barEl.style.setProperty('--progress', pct + '%');
+    pctEl.textContent = pct + '%';
+
+    // Variable delay — feels organic
+    const delay = lineIdx < 4 ? 120 : lineIdx < 10 ? 80 : lineIdx < 16 ? 60 : 150;
+    setTimeout(addLine, delay + Math.random() * 40);
+  }
+
+  // Small pause before starting
+  setTimeout(addLine, 400);
+}
+
+document.addEventListener('DOMContentLoaded', bootSequence);
+
+</script>
+<script>
+// ── CANVAS ──
+/* ═══════════════════════════════════════
+   CANVAS.JS — Background grid + particles
+   ═══════════════════════════════════════ */
+
+(function () {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx    = canvas.getContext('2d');
+
+  let W, H, particles = [], mouse = { x: -9999, y: -9999 };
+  const PARTICLE_COUNT = 60;
+  const GRID_SIZE      = 48;
+
+  function resize() {
+    W = canvas.width  = window.innerWidth;
+    H = canvas.height = window.innerHeight;
+  }
+
+  class Particle {
+    constructor() { this.reset(true); }
+    reset(init = false) {
+      this.x  = Math.random() * W;
+      this.y  = init ? Math.random() * H : H + 10;
+      this.vy = -(0.2 + Math.random() * 0.5);
+      this.vx = (Math.random() - 0.5) * 0.2;
+      this.r  = 0.8 + Math.random() * 1.2;
+      this.life = 0;
+      this.maxLife = 300 + Math.random() * 400;
+      this.hue  = Math.random() > 0.7 ? 165 : 195; // cyan vs teal
+    }
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.life++;
+      if (this.life > this.maxLife || this.y < -10) this.reset();
+    }
+    draw() {
+      const progress = this.life / this.maxLife;
+      const alpha    = Math.sin(progress * Math.PI) * 0.5;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+      ctx.fillStyle = `hsla(${this.hue}, 100%, 70%, ${alpha})`;
+      ctx.fill();
+    }
+  }
+
+  function initParticles() {
+    particles = Array.from({ length: PARTICLE_COUNT }, () => new Particle());
+  }
+
+  function drawGrid() {
+    ctx.strokeStyle = 'rgba(15,32,64,0.6)';
+    ctx.lineWidth   = 0.5;
+
+    // Vertical lines
+    for (let x = 0; x < W; x += GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, H);
+      ctx.stroke();
+    }
+    // Horizontal lines
+    for (let y = 0; y < H; y += GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(W, y);
+      ctx.stroke();
+    }
+
+    // Mouse proximity glow on grid intersections
+    const mx = mouse.x, my = mouse.y;
+    const RADIUS = 120;
+    ctx.fillStyle = 'rgba(0,217,255,0.25)';
+    for (let x = 0; x < W; x += GRID_SIZE) {
+      for (let y = 0; y < H; y += GRID_SIZE) {
+        const d = Math.hypot(x - mx, y - my);
+        if (d < RADIUS) {
+          const a = (1 - d / RADIUS) * 0.5;
+          ctx.globalAlpha = a;
+          ctx.beginPath();
+          ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.globalAlpha = 1;
+        }
+      }
+    }
+  }
+
+  function drawVignetteCorners() {
+    // Corner accents
+    const cornerSize = 40;
+    const alpha      = 0.4;
+    ctx.strokeStyle  = `rgba(0,217,255,${alpha})`;
+    ctx.lineWidth    = 1;
+
+    // Top-left
+    ctx.beginPath(); ctx.moveTo(cornerSize, 0); ctx.lineTo(0, 0); ctx.lineTo(0, cornerSize); ctx.stroke();
+    // Top-right
+    ctx.beginPath(); ctx.moveTo(W - cornerSize, 0); ctx.lineTo(W, 0); ctx.lineTo(W, cornerSize); ctx.stroke();
+    // Bottom-left
+    ctx.beginPath(); ctx.moveTo(0, H - cornerSize); ctx.lineTo(0, H); ctx.lineTo(cornerSize, H); ctx.stroke();
+    // Bottom-right
+    ctx.beginPath(); ctx.moveTo(W - cornerSize, H); ctx.lineTo(W, H); ctx.lineTo(W, H - cornerSize); ctx.stroke();
+  }
+
+  let frame = 0;
+  function animate() {
+    ctx.clearRect(0, 0, W, H);
+
+    drawGrid();
+    drawVignetteCorners();
+
+    particles.forEach(p => { p.update(); p.draw(); });
+
+    // Subtle horizontal scan line
+    const scanY = (frame * 0.4) % H;
+    const scanGrad = ctx.createLinearGradient(0, scanY - 4, 0, scanY + 4);
+    scanGrad.addColorStop(0, 'transparent');
+    scanGrad.addColorStop(0.5, 'rgba(0,217,255,0.04)');
+    scanGrad.addColorStop(1, 'transparent');
+    ctx.fillStyle = scanGrad;
+    ctx.fillRect(0, scanY - 4, W, 8);
+
+    frame++;
+    requestAnimationFrame(animate);
+  }
+
+  window.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+  window.addEventListener('resize', () => { resize(); initParticles(); });
+  resize();
+  initParticles();
+  animate();
+})();
+
+</script>
+<script>
+// ── NETWORK ──
+/* ═══════════════════════════════════════
+   NETWORK.JS — Animated node/edge map
+   ═══════════════════════════════════════ */
+
+(function () {
+  let canvas, ctx, W, H, nodes = [], edges = [], animFrame;
+  let initialized = false;
+
+  const NODES = [
+    { id: 'vorsynth', label: 'VORSYNTH',    type: 'core',     x: 0.5,  y: 0.5  },
+    { id: 'django',   label: 'Django',      type: 'service',  x: 0.25, y: 0.25 },
+    { id: 'drf',      label: 'DRF',         type: 'service',  x: 0.2,  y: 0.6  },
+    { id: 'fastapi',  label: 'FastAPI',     type: 'service',  x: 0.3,  y: 0.78 },
+    { id: 'redis',    label: 'Redis',       type: 'service',  x: 0.72, y: 0.22 },
+    { id: 'postgres', label: 'PostgreSQL',  type: 'service',  x: 0.78, y: 0.5  },
+    { id: 'docker',   label: 'Docker',      type: 'service',  x: 0.7,  y: 0.75 },
+    { id: 'smbn',     label: 'SMBN',        type: 'service',  x: 0.45, y: 0.18 },
+    { id: 'xsscan',   label: 'XSScan',      type: 'security', x: 0.15, y: 0.42 },
+    { id: 'sectool',  label: 'SecureTool',  type: 'security', x: 0.82, y: 0.32 },
+    { id: 'vuln',     label: 'VulnScanner', type: 'security', x: 0.6,  y: 0.15 },
+    { id: 'linux',    label: 'Linux',       type: 'service',  x: 0.88, y: 0.7  },
+  ];
+
+  const EDGES = [
+    ['vorsynth','django'],['vorsynth','drf'],['vorsynth','fastapi'],
+    ['vorsynth','redis'],['vorsynth','postgres'],['vorsynth','smbn'],
+    ['vorsynth','xsscan'],['vorsynth','sectool'],['vorsynth','vuln'],
+    ['django','postgres'],['django','redis'],['fastapi','redis'],
+    ['smbn','redis'],['smbn','docker'],['docker','linux'],
+    ['sectool','vuln'],['xsscan','vuln'],
+  ];
+
+  const COLORS = {
+    core:     '#00d9ff',
+    service:  '#00ff88',
+    security: '#ff6b35',
+  };
+
+  function init() {
+    canvas = document.getElementById('network-canvas');
+    if (!canvas) return;
+    ctx = canvas.getContext('2d');
+    resize();
+    buildGraph();
+    initialized = true;
+    animate();
+  }
+
+  function resize() {
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    W = canvas.width  = rect.width  || canvas.offsetWidth  || 300;
+    H = canvas.height = rect.height || canvas.offsetHeight || 200;
+    if (initialized) buildGraph();
+  }
+
+  function buildGraph() {
+    nodes = NODES.map(n => ({
+      ...n,
+      px:    n.x * W,
+      py:    n.y * H,
+      vx:    (Math.random() - 0.5) * 0.3,
+      vy:    (Math.random() - 0.5) * 0.3,
+      pulse: Math.random() * Math.PI * 2,
+    }));
+
+    edges = EDGES.map(([a, b]) => ({
+      a: nodes.find(n => n.id === a),
+      b: nodes.find(n => n.id === b),
+      progress: 0,
+      speed: 0.003 + Math.random() * 0.004,
+      active: false,
+      timer: Math.random() * 200,
+    }));
+  }
+
+  let frame = 0;
+  function animate() {
+    animFrame = requestAnimationFrame(animate);
+    if (!ctx || !W || !H) return;
+    ctx.clearRect(0, 0, W, H);
+
+    frame++;
+
+    // Soft drift
+    nodes.forEach(n => {
+      n.pulse += 0.04;
+      n.px += n.vx;
+      n.py += n.vy;
+
+      const ox = n.x * W, oy = n.y * H;
+      const dx = ox - n.px, dy = oy - n.py;
+      n.vx += dx * 0.002;
+      n.vy += dy * 0.002;
+      n.vx *= 0.97;
+      n.vy *= 0.97;
+
+      n.px = Math.max(8, Math.min(W - 8, n.px));
+      n.py = Math.max(8, Math.min(H - 8, n.py));
+    });
+
+    // Draw edges
+    edges.forEach(e => {
+      if (!e.a || !e.b) return;
+      e.timer--;
+      if (e.timer <= 0) {
+        e.active   = true;
+        e.progress = 0;
+        e.timer    = 120 + Math.random() * 200;
+      }
+      if (e.active) e.progress = Math.min(1, e.progress + e.speed);
+      if (e.progress >= 1) e.active = false;
+
+      const ax = e.a.px, ay = e.a.py, bx = e.b.px, by = e.b.py;
+
+      // Base edge
+      ctx.beginPath();
+      ctx.moveTo(ax, ay);
+      ctx.lineTo(bx, by);
+      ctx.strokeStyle = 'rgba(15,32,64,0.9)';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+
+      // Active packet
+      if (e.active && e.progress > 0) {
+        const px = ax + (bx - ax) * e.progress;
+        const py = ay + (by - ay) * e.progress;
+
+        // Glow trail
+        const grad = ctx.createLinearGradient(ax, ay, px, py);
+        grad.addColorStop(0, 'transparent');
+        grad.addColorStop(1, 'rgba(0,217,255,0.5)');
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(px, py);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Packet dot
+        ctx.beginPath();
+        ctx.arc(px, py, 2, 0, Math.PI * 2);
+        ctx.fillStyle = '#00d9ff';
+        ctx.fill();
+      }
+    });
+
+    // Draw nodes
+    nodes.forEach(n => {
+      const color  = COLORS[n.type];
+      const isCore = n.type === 'core';
+      const r      = isCore ? 6 : 4;
+      const pulse  = Math.sin(n.pulse) * 0.5 + 0.5;
+
+      // Glow ring
+      const glowR = r + 4 + pulse * 4;
+      ctx.beginPath();
+      ctx.arc(n.px, n.py, glowR, 0, Math.PI * 2);
+      ctx.fillStyle = color + Math.floor(pulse * 30).toString(16).padStart(2,'0');
+      ctx.fill();
+
+      // Node dot
+      ctx.beginPath();
+      ctx.arc(n.px, n.py, r, 0, Math.PI * 2);
+      ctx.fillStyle   = color;
+      ctx.shadowBlur  = 8;
+      ctx.shadowColor = color;
+      ctx.fill();
+      ctx.shadowBlur  = 0;
+
+      // Label
+      ctx.font      = `${isCore ? '600' : '400'} ${isCore ? 10 : 8}px 'IBM Plex Mono', monospace`;
+      ctx.fillStyle = isCore ? color : 'rgba(122,156,192,0.8)';
+      ctx.textAlign = 'center';
+      ctx.fillText(n.label, n.px, n.py - r - 5);
+    });
+  }
+
+  window.addEventListener('boot-complete', () => {
+    setTimeout(init, 200);
+  });
+
+  window.addEventListener('resize', resize);
+})();
+
+</script>
+<script>
+// ── ACTIVITY ──
+/* ═══════════════════════════════════════
+   ACTIVITY.JS — Live activity log feed
+   ═══════════════════════════════════════ */
+
+(function () {
+  const EVENTS = [
+    { type: 'commit',  msgs: ['feat: async task scheduler refactor','fix: OTA broadcast for Android 13+','refactor: AI provider config merge','feat: Socket.IO device dispatch layer','chore: Redis connection pool tuning','fix: ASGI middleware ordering','feat: XSScan payload encoder v2','test: vulnerability scanner coverage'] },
+    { type: 'deploy',  msgs: ['SMBN v2.4 → production','redis:7.2 container ↑ OK','django-asgi worker spawned','PostgreSQL replica synced','docker network vorsynth_net ↑'] },
+    { type: 'scan',    msgs: ['XSS audit: 14 endpoints checked','SSL cert expiry check: 89d','CVE-2024-4... patched','dep scan: 0 critical, 2 medium','OWASP top-10 sweep complete'] },
+    { type: 'alert',   msgs: ['Rate limit hit: 429 from 185.x.x.x','Unusual login attempt blocked','Port 22 probe detected — blocked'] },
+  ];
+
+  const MAX_LINES = 9;
+  let feed, interval;
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function timestamp() {
+    const d = new Date();
+    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+  }
+
+  function randomEvent() {
+    // Bias toward commit/deploy
+    const weights = [0.45, 0.3, 0.18, 0.07];
+    const r = Math.random();
+    let acc = 0;
+    for (let i = 0; i < weights.length; i++) {
+      acc += weights[i];
+      if (r < acc) return EVENTS[i];
+    }
+    return EVENTS[0];
+  }
+
+  function addLine() {
+    if (!feed) return;
+    const ev  = randomEvent();
+    const msg = ev.msgs[Math.floor(Math.random() * ev.msgs.length)];
+    const ts  = timestamp();
+
+    const line = document.createElement('div');
+    line.className = 'activity-line';
+    line.style.animationDelay = '0ms';
+    line.innerHTML =
+      `<span class="act-time">${ts}</span>` +
+      `<span class="act-type ${ev.type}">${ev.type.toUpperCase()}</span>` +
+      `<span class="act-msg">${msg}</span>`;
+
+    feed.appendChild(line);
+
+    // Remove oldest if over limit
+    const lines = feed.querySelectorAll('.activity-line');
+    if (lines.length > MAX_LINES) lines[0].remove();
+  }
+
+  function start() {
+    feed = document.getElementById('activity-feed');
+    if (!feed) return;
+
+    // Seed with initial lines
+    for (let i = 0; i < 6; i++) {
+      setTimeout(addLine, i * 120);
+    }
+
+    // Ongoing stream
+    interval = setInterval(addLine, 2800 + Math.random() * 1200);
+  }
+
+  window.addEventListener('boot-complete', () => setTimeout(start, 600));
+})();
+
+</script>
+<script>
+// ── STACK ──
+/* ═══════════════════════════════════════
+   STACK.JS — Technology stack renderer
+   ═══════════════════════════════════════ */
+
+const STACK = [
+  // Languages
+  { name: 'Python',      icon: '🐍', cat: 'LANGUAGE',    level: 0.90, color: '#3776AB', accent: '#4ea6dc' },
+  { name: 'Kotlin',      icon: '🟣', cat: 'LANGUAGE',    level: 0.55, color: '#7F52FF', accent: '#a07aff' },
+  { name: 'JavaScript',  icon: '⚡', cat: 'LANGUAGE',    level: 0.65, color: '#F7DF1E', accent: '#ffe566' },
+  { name: 'Bash',        icon: '▶', cat: 'LANGUAGE',    level: 0.75, color: '#00d9ff', accent: '#00d9ff' },
+  { name: 'HTML',        icon: '🌐', cat: 'LANGUAGE',    level: 0.80, color: '#E34F26', accent: '#ff7040' },
+  { name: 'CSS',         icon: '🎨', cat: 'LANGUAGE',    level: 0.70, color: '#1572B6', accent: '#2d9cdb' },
+  // Frameworks
+  { name: 'Django',      icon: '🎯', cat: 'FRAMEWORK',   level: 0.88, color: '#092E20', accent: '#00ff88' },
+  { name: 'DRF',         icon: '🔌', cat: 'FRAMEWORK',   level: 0.85, color: '#a30000', accent: '#ff4444' },
+  { name: 'FastAPI',     icon: '🚀', cat: 'FRAMEWORK',   level: 0.75, color: '#009688', accent: '#00e5cc' },
+  { name: 'HTMX',        icon: '⚙', cat: 'FRAMEWORK',   level: 0.60, color: '#3366ff', accent: '#5588ff' },
+  // Data
+  { name: 'PostgreSQL',  icon: '🐘', cat: 'DATABASE',    level: 0.80, color: '#336791', accent: '#5591cc' },
+  { name: 'Redis',       icon: '🔴', cat: 'DATABASE',    level: 0.78, color: '#DC382D', accent: '#ff5a50' },
+  { name: 'SQLite',      icon: '📦', cat: 'DATABASE',    level: 0.72, color: '#003B57', accent: '#0077aa' },
+  { name: 'MySQL',       icon: '🐬', cat: 'DATABASE',    level: 0.65, color: '#00758F', accent: '#00aacc' },
+  // Infra
+  { name: 'Docker',      icon: '🐳', cat: 'INFRA',       level: 0.80, color: '#2496ED', accent: '#5ab3ff' },
+  { name: 'Linux',       icon: '🐧', cat: 'INFRA',       level: 0.85, color: '#FCC624', accent: '#ffd700' },
+  { name: 'Git',         icon: '🌿', cat: 'INFRA',       level: 0.88, color: '#F05032', accent: '#ff7755' },
+  { name: 'Postman',     icon: '📬', cat: 'INFRA',       level: 0.80, color: '#FF6C37', accent: '#ff8855' },
+  // Security
+  { name: 'XSScan',      icon: '🔍', cat: 'SECURITY',    level: 0.85, color: '#ff6b35', accent: '#ff6b35' },
+  { name: 'SecureTool',  icon: '🔐', cat: 'SECURITY',    level: 0.82, color: '#ff6b35', accent: '#ff6b35' },
+  // Mobile
+  { name: 'Kotlin/Android', icon: '📱', cat: 'MOBILE',   level: 0.50, color: '#7F52FF', accent: '#a07aff' },
+  { name: 'Android Studio', icon: '🛠', cat: 'MOBILE',   level: 0.48, color: '#3DDC84', accent: '#3DDC84' },
+];
+
+function hexToRgba(hex, alpha) {
+  const r = parseInt(hex.slice(1,3),16);
+  const g = parseInt(hex.slice(3,5),16);
+  const b = parseInt(hex.slice(5,7),16);
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function renderStack() {
+  const grid = document.getElementById('stack-grid');
+  if (!grid) return;
+
+  STACK.forEach((item, i) => {
+    const card = document.createElement('div');
+    card.className = 'stack-card';
+    card.style.setProperty('--card-color',  hexToRgba(item.accent, 0.08));
+    card.style.setProperty('--card-border', hexToRgba(item.accent, 0.35));
+    card.style.setProperty('--card-accent', item.accent);
+    card.style.animationDelay = `${i * 40}ms`;
+
+    card.innerHTML = `
+      <div class="stack-icon">${item.icon}</div>
+      <div class="stack-name">${item.name}</div>
+      <div class="stack-cat">${item.cat}</div>
+      <div class="stack-level">
+        <div class="stack-level-fill" style="width:${item.level * 100}%"></div>
+      </div>`;
+
+    // Mouse glow effect
+    card.addEventListener('mousemove', e => {
+      const rect = card.getBoundingClientRect();
+      card.style.setProperty('--mx', ((e.clientX - rect.left) / rect.width * 100) + '%');
+      card.style.setProperty('--my', ((e.clientY - rect.top)  / rect.height * 100) + '%');
+    });
+
+    grid.appendChild(card);
+
+    // Intersection observer for level bar animation
+    const obs = new IntersectionObserver(entries => {
+      entries.forEach(en => {
+        if (en.isIntersecting) { card.classList.add('visible'); obs.disconnect(); }
+      });
+    }, { threshold: 0.2 });
+    obs.observe(card);
+  });
+}
+
+window.addEventListener('boot-complete', () => setTimeout(renderStack, 400));
+
+</script>
+<script>
+// ── PROJECTS ──
+/* ═══════════════════════════════════════
+   PROJECTS.JS — Deployed systems renderer
+   ═══════════════════════════════════════ */
+
+const PROJECTS = [
+  {
+    name:   'SMBN Command Center',
+    type:   'DISTRIBUTED BACKEND',
+    status: 'online',
+    statusLabel: 'LIVE',
+    desc:   'Smart Media Bot Network — multi-device orchestration platform with real-time WebSocket dispatch, automation rule engine, AI provider integration, and Android OTA delivery pipeline.',
+    meta: [
+      { k: 'STACK',  v: 'Django · ASGI · Redis · PostgreSQL · Socket.IO · Docker' },
+      { k: 'ARCH',   v: 'Event-driven · Producer/Consumer · REST + WS hybrid' },
+      { k: 'FEAT',   v: 'AI panel · Device registry · OTA system · Scheduler' },
+    ],
+    tags: ['Python', 'Django', 'Redis', 'Docker', 'Socket.IO', 'ASGI'],
+    uptime: 'UPTIME 99.8%',
+    link: null,
+  },
+  {
+    name:   'XSScan',
+    type:   'SECURITY TOOL · PyPI',
+    status: 'online',
+    statusLabel: 'PUBLISHED',
+    desc:   'XSS vulnerability detection library published on PyPI. Automated payload injection, DOM analysis, and structured vulnerability reporting for Python web security audits.',
+    meta: [
+      { k: 'LANG',   v: 'Python' },
+      { k: 'DIST',   v: 'PyPI — pip install xsscan' },
+      { k: 'SCOPE',  v: 'Payload encoder · DOM inspector · Report generator' },
+    ],
+    tags: ['Python', 'Security', 'PyPI', 'XSS', 'OWASP'],
+    uptime: 'STATUS ACTIVE',
+    link: 'https://pypi.org/user/alanhasn',
+  },
+  {
+    name:   'SecureTool',
+    type:   'SECURITY LIBRARY · PyPI',
+    status: 'online',
+    statusLabel: 'PUBLISHED',
+    desc:   'Reusable security primitives for Python applications. Encryption helpers, secure hashing, token generation, input validation, and audit-friendly logging utilities.',
+    meta: [
+      { k: 'LANG',   v: 'Python' },
+      { k: 'DIST',   v: 'PyPI — pip install securetool' },
+      { k: 'SCOPE',  v: 'Cryptography · Token auth · Input validation · Audit logs' },
+    ],
+    tags: ['Python', 'Cryptography', 'PyPI', 'Security', 'Auth'],
+    uptime: 'STATUS ACTIVE',
+    link: 'https://pypi.org/user/alanhasn',
+  },
+  {
+    name:   'Vulnerability Scanner',
+    type:   'SECURITY PLATFORM · WEB APP',
+    status: 'active',
+    statusLabel: 'IN DEV',
+    desc:   'Automated web vulnerability scanning platform with structured report interface. Covers OWASP Top 10, HTTP header inspection, endpoint enumeration, and async scanning workers.',
+    meta: [
+      { k: 'STACK',  v: 'Python · Django · JavaScript · DRF' },
+      { k: 'ARCH',   v: 'Django backend · REST API · Async scanner workers' },
+      { k: 'SCOPE',  v: 'OWASP Top 10 · Header audit · Endpoint discovery' },
+    ],
+    tags: ['Django', 'OWASP', 'Security', 'Python', 'REST'],
+    uptime: 'BUILD ACTIVE',
+    link: null,
+  },
+  {
+    name:   'Android OTA System',
+    type:   'MOBILE INFRASTRUCTURE',
+    status: 'active',
+    statusLabel: 'INTEGRATED',
+    desc:   'Over-the-air APK update delivery system integrated into SMBN. Streaming APK download, BroadcastReceiver fix for Android 13+, package installer intents, and version management.',
+    meta: [
+      { k: 'LANG',   v: 'Kotlin · Python (Django backend)' },
+      { k: 'FEAT',   v: 'APK streaming · Android 13+ compat · Version control' },
+      { k: 'INT',    v: 'SMBN backend · Device registry · Socket.IO events' },
+    ],
+    tags: ['Kotlin', 'Android', 'Django', 'OTA', 'Mobile'],
+    uptime: 'UPTIME 99.5%',
+    link: null,
+  },
+  {
+    name:   'Backend API Systems',
+    type:   'INFRASTRUCTURE LAYER',
+    status: 'staging',
+    statusLabel: 'ONGOING',
+    desc:   'Collection of production-grade REST and WebSocket API systems built with Django, FastAPI, and DRF. Clean architecture, async-first, security hardened with rate limiting and auth layers.',
+    meta: [
+      { k: 'STACK',  v: 'Django · FastAPI · DRF · PostgreSQL · Redis' },
+      { k: 'FEAT',   v: 'JWT auth · Rate limiting · ASGI · Async workers' },
+      { k: 'FOCUS',  v: 'Clean arch · Security-first · Scalable design' },
+    ],
+    tags: ['Django', 'FastAPI', 'REST', 'PostgreSQL', 'Redis'],
+    uptime: 'MULTI-SERVICE',
+    link: 'https://github.com/alanhasn',
+  },
+];
+
+function renderProjects() {
+  const grid = document.getElementById('proj-grid');
+  if (!grid) return;
+
+  PROJECTS.forEach((p, i) => {
+    const card = document.createElement('div');
+    card.className = 'proj-card';
+    card.style.animationDelay = `${i * 80}ms`;
+
+    const tagsHtml = p.tags.map(t => `<span class="proj-tag">${t}</span>`).join('');
+    const metaHtml = p.meta.map(m =>
+      `<div class="proj-meta-row"><span class="proj-meta-key">${m.k}</span><span class="proj-meta-val">${m.v}</span></div>`
+    ).join('');
+    const linkHtml = p.link
+      ? `<a href="${p.link}" target="_blank" class="proj-link">VIEW ↗</a>`
+      : `<span class="proj-link" style="border-color:var(--border);color:var(--text-lo);cursor:default;">PRIVATE</span>`;
+
+    card.innerHTML = `
+      <div class="proj-card-top">
+        <div class="proj-status-dot ${p.status}"></div>
+        <span class="proj-name">${p.name}</span>
+        <span class="proj-type">${p.statusLabel}</span>
+      </div>
+      <div class="proj-card-body">
+        <div class="proj-desc">${p.desc}</div>
+        <div class="proj-meta">${metaHtml}</div>
+        <div class="proj-tags">${tagsHtml}</div>
+      </div>
+      <div class="proj-footer">
+        <span class="proj-uptime">${p.uptime}</span>
+        <span class="proj-type" style="color:var(--text-lo);font-size:9px;letter-spacing:.1em">${p.type}</span>
+        ${linkHtml}
+      </div>`;
+
+    grid.appendChild(card);
+  });
+}
+
+window.addEventListener('boot-complete', () => setTimeout(renderProjects, 500));
+
+</script>
+<script>
+// ── TERMINAL ──
+/* ═══════════════════════════════════════
+   TERMINAL.JS — Interactive terminal
+   ═══════════════════════════════════════ */
+
+(function () {
+  const COMMANDS = {
+    help: {
+      desc: 'Show available commands',
+      run: () => [
+        { t: 'h1', v: '┌─ VORSYNTH TERMINAL ──────────────────────┐' },
+        { t: 'out', v: '  help         Show this help menu' },
+        { t: 'out', v: '  whoami       Identity and profile' },
+        { t: 'out', v: '  skills       Technology stack' },
+        { t: 'out', v: '  projects     Deployed systems' },
+        { t: 'out', v: '  stack [name] Detail on a specific tech' },
+        { t: 'out', v: '  contact      How to reach Vorsynth' },
+        { t: 'out', v: '  philosophy   Core engineering directives' },
+        { t: 'out', v: '  uptime       System runtime info' },
+        { t: 'out', v: '  ls           List available resources' },
+        { t: 'out', v: '  cat [file]   Read a file (try: cat README)' },
+        { t: 'out', v: '  ping         Test connection' },
+        { t: 'out', v: '  clear        Clear terminal' },
+        { t: 'info', v: '└──────────────────────────────────────────┘' },
+      ],
+    },
+
+    whoami: {
+      desc: 'Identity',
+      run: () => [
+        { t: 'h1',  v: 'VORSYNTH' },
+        { t: 'out', v: 'handle   : @alanhasn' },
+        { t: 'out', v: 'focus    : Backend Engineering · Security · DevOps' },
+        { t: 'out', v: 'stack    : Python · Django · Redis · PostgreSQL · Docker' },
+        { t: 'out', v: 'approach : Security-first · Understand internals · Build real systems' },
+        { t: 'out', v: 'current  : SMBN Command Center — distributed real-time backend' },
+        { t: 'out', v: 'pypi     : pypi.org/user/alanhasn' },
+        { t: 'out', v: 'github   : github.com/alanhasn' },
+        { t: 'ok',  v: '→ Available for backend and security projects.' },
+      ],
+    },
+
+    skills: {
+      desc: 'Technology stack',
+      run: () => [
+        { t: 'h1',  v: 'TECHNOLOGY MATRIX' },
+        { t: 'out', v: '' },
+        { t: 'out', v: 'LANGUAGES    Python · Kotlin · JavaScript · Bash · HTML · CSS' },
+        { t: 'out', v: 'FRAMEWORKS   Django · DRF · FastAPI · HTMX' },
+        { t: 'out', v: 'DATABASE     PostgreSQL · Redis · SQLite · MySQL' },
+        { t: 'out', v: 'INFRA        Docker · Linux · Git' },
+        { t: 'out', v: 'SECURITY     XSScan · SecureTool · Static Analysis · RE' },
+        { t: 'out', v: 'MOBILE       Kotlin · Android Studio · Android SDK' },
+        { t: 'info', v: '' },
+        { t: 'info', v: 'Run: stack <name>  for detail on any technology.' },
+      ],
+    },
+
+    projects: {
+      desc: 'Deployed systems',
+      run: () => [
+        { t: 'h1',  v: 'DEPLOYED SYSTEMS' },
+        { t: 'out', v: '' },
+        { t: 'ok',  v: '● SMBN Command Center     Distributed real-time backend · Django/ASGI/Redis' },
+        { t: 'ok',  v: '● XSScan                  XSS detection library · PyPI published' },
+        { t: 'ok',  v: '● SecureTool              Python security primitives · PyPI published' },
+        { t: 'warn',v: '◈ Vulnerability Scanner   Web security platform · Active development' },
+        { t: 'warn',v: '◈ Android OTA System      OTA delivery integrated into SMBN' },
+        { t: 'out', v: '◎ Backend API Systems     Production REST/WebSocket infrastructure' },
+      ],
+    },
+
+    contact: {
+      desc: 'Contact information',
+      run: () => [
+        { t: 'h1',  v: 'CONTACT' },
+        { t: 'out', v: 'github  : https://github.com/alanhasn' },
+        { t: 'out', v: 'pypi    : https://pypi.org/user/alanhasn' },
+        { t: 'ok',  v: '→ Open to backend, security, and infrastructure collaboration.' },
+      ],
+    },
+
+    philosophy: {
+      desc: 'Core engineering directives',
+      run: () => [
+        { t: 'h1',  v: 'CORE DIRECTIVES' },
+        { t: 'out', v: '01  Security is architecture — not a feature bolted on later' },
+        { t: 'out', v: '02  Read the source. The docs lie. The code does not.' },
+        { t: 'out', v: '03  Understand the protocol before touching the library' },
+        { t: 'out', v: '04  Break systems deliberately. Fix with precision.' },
+        { t: 'out', v: '05  Automate the repeatable. Think harder on the novel.' },
+        { t: 'out', v: '06  Clean code is a forcing function for clear thinking' },
+        { t: 'out', v: '07  Know the failure modes before the system ships' },
+      ],
+    },
+
+    ping: {
+      desc: 'Test connection',
+      run: () => {
+        const ms = Math.floor(Math.random() * 8) + 1;
+        return [
+          { t: 'out', v: 'PING vorsynth.dev (127.0.0.1)' },
+          { t: 'ok',  v: `64 bytes from vorsynth.dev: icmp_seq=1 ttl=64 time=${ms}.${Math.floor(Math.random()*9)} ms` },
+          { t: 'ok',  v: `64 bytes from vorsynth.dev: icmp_seq=2 ttl=64 time=${ms-1}.${Math.floor(Math.random()*9)} ms` },
+          { t: 'ok',  v: `64 bytes from vorsynth.dev: icmp_seq=3 ttl=64 time=${ms}.${Math.floor(Math.random()*9)} ms` },
+          { t: 'info', v: '--- vorsynth.dev ping statistics ---' },
+          { t: 'info', v: '3 packets transmitted, 3 received, 0% packet loss' },
+        ];
+      },
+    },
+
+    uptime: {
+      desc: 'System uptime',
+      run: () => {
+        const start = new Date('2024-03-17');
+        const now   = new Date();
+        const days  = Math.floor((now - start) / 86400000);
+        return [
+          { t: 'h1',  v: 'SYSTEM UPTIME' },
+          { t: 'out', v: `started  : Mar 17, 2024` },
+          { t: 'out', v: `runtime  : ${days} days` },
+          { t: 'out', v: `commits  : 312 (public)` },
+          { t: 'ok',  v: 'status   : OPERATIONAL' },
+        ];
+      },
+    },
+
+    ls: {
+      desc: 'List resources',
+      run: () => [
+        { t: 'out', v: 'total 8' },
+        { t: 'ok',  v: 'drwxr-xr-x  projects/     6 items' },
+        { t: 'ok',  v: 'drwxr-xr-x  stack/        22 items' },
+        { t: 'ok',  v: '-rw-r--r--  README        3.2K' },
+        { t: 'ok',  v: '-rw-r--r--  PHILOSOPHY    512' },
+        { t: 'ok',  v: '-rw-r--r--  CONTACT       128' },
+        { t: 'info', v: 'Run cat <file> to read.' },
+      ],
+    },
+
+    clear: {
+      desc: 'Clear terminal',
+      run: () => { clearOutput(); return []; },
+    },
+  };
+
+  // Dynamic stack <name> command
+  const STACK_DETAIL = {
+    python:     ['Python 3.12', 'Primary language', 'Django · FastAPI · security tooling · scripting'],
+    django:     ['Django 5.x', 'Main web framework', 'DRF · ASGI · Channels · ORM · Auth · Admin'],
+    fastapi:    ['FastAPI 0.11x', 'Async API framework', 'Pydantic · async/await · OpenAPI · Starlette'],
+    redis:      ['Redis 7.2', 'In-memory data store', 'Pub/Sub · Caching · Session · Queue · Streams'],
+    docker:     ['Docker 26', 'Container platform', 'Compose · Networking · Volumes · Registry'],
+    postgresql: ['PostgreSQL 15', 'Primary database', 'JSONB · Indexing · Transactions · Replication'],
+    linux:      ['Linux (Debian/Ubuntu)', 'OS of choice', 'systemd · networking · hardening · shell'],
+    kotlin:     ['Kotlin', 'Android development', 'Jetpack · Coroutines · Android SDK · Gradle'],
+  };
+
+  // cat <file> command
+  const FILES = {
+    readme: [
+      { t: 'h1',  v: '# VORSYNTH' },
+      { t: 'out', v: 'Backend engineer building distributed systems and security tooling.' },
+      { t: 'out', v: '' },
+      { t: 'out', v: 'I reverse-engineer software to understand how things actually work —' },
+      { t: 'out', v: 'not how documentation claims they do.' },
+      { t: 'out', v: '' },
+      { t: 'ok',  v: 'Security is not a feature I bolt on. It is baked in from day one.' },
+    ],
+    philosophy: [
+      { t: 'h1',  v: '# PHILOSOPHY' },
+      { t: 'out', v: '01  Security is architecture — not a feature bolted on later' },
+      { t: 'out', v: '02  Read the source. The docs lie. The code does not.' },
+      { t: 'out', v: '03  Understand the protocol before touching the library' },
+      { t: 'out', v: '04  Break systems deliberately. Fix with precision.' },
+      { t: 'out', v: '05  Automate the repeatable. Think harder on the novel.' },
+    ],
+    contact: [
+      { t: 'h1',  v: '# CONTACT' },
+      { t: 'out', v: 'github : https://github.com/alanhasn' },
+      { t: 'out', v: 'pypi   : https://pypi.org/user/alanhasn' },
+    ],
+  };
+
+  let output, input, history = [], histIdx = -1;
+
+  function line(type, value) {
+    const el = document.createElement('div');
+    el.className = `term-line ${type}`;
+    el.textContent = value;
+    output.appendChild(el);
+    output.scrollTop = output.scrollHeight;
+  }
+
+  function clearOutput() {
+    output.innerHTML = '';
+  }
+
+  function prompt(cmd) {
+    line('cmd', `vorsynth@backend:~$ ${cmd}`);
+  }
+
+  function runCommand(raw) {
+    const parts = raw.trim().split(/\s+/);
+    const cmd   = parts[0].toLowerCase();
+    const arg   = parts.slice(1).join(' ').toLowerCase();
+
+    if (!cmd) return;
+
+    // History
+    history.unshift(raw);
+    histIdx = -1;
+
+    if (cmd === 'stack' && arg) {
+      const detail = STACK_DETAIL[arg] || STACK_DETAIL[arg.replace(/\s/g,'')];
+      if (detail) {
+        line('h1', detail[0]);
+        line('out', `category : ${detail[1]}`);
+        line('out', `used for : ${detail[2]}`);
+      } else {
+        line('err', `stack: '${arg}' not found. Try: python, django, redis, docker, kotlin, linux`);
+      }
+      return;
+    }
+
+    if (cmd === 'cat' && arg) {
+      const file = FILES[arg];
+      if (file) {
+        file.forEach(l => line(l.t, l.v));
+      } else {
+        line('err', `cat: ${arg}: No such file`);
+        line('info', 'Available: README  PHILOSOPHY  CONTACT');
+      }
+      return;
+    }
+
+    const handler = COMMANDS[cmd];
+    if (handler) {
+      const result = handler.run();
+      (result || []).forEach(l => line(l.t, l.v));
+    } else {
+      line('err', `command not found: ${cmd}`);
+      line('info', "Type 'help' to see available commands.");
+    }
+  }
+
+  function init() {
+    output = document.getElementById('term-output');
+    input  = document.getElementById('term-input');
+    if (!output || !input) return;
+
+    // Welcome banner
+    const welcomeLines = [
+      { t: 'info', v: '╔══════════════════════════════════════════════╗' },
+      { t: 'info', v: '║  VORSYNTH TERMINAL  v2.4.1                   ║' },
+      { t: 'info', v: '║  Backend Engineer · Security · Infrastructure ║' },
+      { t: 'info', v: '╚══════════════════════════════════════════════╝' },
+      { t: 'out',  v: '' },
+      { t: 'ok',   v: 'System online. All services nominal.' },
+      { t: 'out',  v: "Type 'help' to see available commands." },
+      { t: 'out',  v: '' },
+    ];
+    welcomeLines.forEach((l, i) => setTimeout(() => line(l.t, l.v), i * 60));
+
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        const val = input.value.trim();
+        prompt(val);
+        input.value = '';
+        runCommand(val);
+      }
+      if (e.key === 'ArrowUp') {
+        histIdx = Math.min(histIdx + 1, history.length - 1);
+        input.value = history[histIdx] || '';
+        e.preventDefault();
+      }
+      if (e.key === 'ArrowDown') {
+        histIdx = Math.max(histIdx - 1, -1);
+        input.value = histIdx >= 0 ? history[histIdx] : '';
+        e.preventDefault();
+      }
+    });
+
+    // Focus terminal when section is shown
+    document.querySelector('[data-section="terminal"]')?.addEventListener('click', () => {
+      input.focus();
+    });
+  }
+
+  window.addEventListener('boot-complete', () => setTimeout(init, 700));
+})();
+
+</script>
+<script>
+// ── MAIN ──
+/* ═══════════════════════════════════════
+   MAIN.JS — Core orchestration
+   ═══════════════════════════════════════ */
+
+/* ── CUSTOM CURSOR ── */
+(function () {
+  const cur   = document.getElementById('cursor');
+  const trail = document.getElementById('cursor-trail');
+  let tx = 0, ty = 0, cx = 0, cy = 0;
+
+  document.addEventListener('mousemove', e => {
+    tx = e.clientX; ty = e.clientY;
+    cur.style.left = tx + 'px';
+    cur.style.top  = ty + 'px';
+  });
+
+  // Trail lerp
+  function animTrail() {
+    cx += (tx - cx) * 0.18;
+    cy += (ty - cy) * 0.18;
+    trail.style.left = cx + 'px';
+    trail.style.top  = cy + 'px';
+    requestAnimationFrame(animTrail);
+  }
+  animTrail();
+
+  document.querySelectorAll('a, button, .stack-card, .proj-card, .nav-tab, input').forEach(el => {
+    el.addEventListener('mouseenter', () => cur.classList.add('hover'));
+    el.addEventListener('mouseleave', () => cur.classList.remove('hover'));
+  });
+})();
+
+/* ── LIVE CLOCK ── */
+(function () {
+  const el = document.getElementById('live-time');
+  function tick() {
+    const d = new Date();
+    const h = String(d.getUTCHours()+3).padStart(2,'0');
+    const m = String(d.getUTCMinutes()).padStart(2,'0');
+    const s = String(d.getUTCSeconds()).padStart(2,'0');
+    if (el) el.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  setInterval(tick, 1000);
+})();
+
+/* ── FAKE CPU METER ── */
+(function () {
+  const el = document.getElementById('cpu-val');
+  let base = 18;
+  function tick() {
+    base += (Math.random() - 0.5) * 6;
+    base  = Math.max(8, Math.min(62, base));
+    if (el) el.textContent = Math.round(base);
+  }
+  tick();
+  setInterval(tick, 1800);
+})();
+
+/* ── STATUS MESSAGE ROTATOR ── */
+(function () {
+  const msgs = [
+    'SYSTEM OPERATIONAL',
+    'ALL SERVICES NOMINAL',
+    'SECURITY MODULES ACTIVE',
+    'MONITORING ENABLED',
+    'REDIS: CONNECTED',
+    'POSTGRESQL: CONNECTED',
+    'DOCKER DAEMON: RUNNING',
+  ];
+  const el = document.getElementById('status-msg');
+  let i = 0;
+  setInterval(() => {
+    if (!el) return;
+    i = (i + 1) % msgs.length;
+    el.style.opacity = 0;
+    setTimeout(() => {
+      el.textContent = msgs[i];
+      el.style.opacity = 1;
+    }, 300);
+  }, 4000);
+  if (el) el.style.transition = 'opacity 0.3s';
+})();
+
+/* ── COUNTER ANIMATION ── */
+function animateCounters() {
+  document.querySelectorAll('.counter').forEach(el => {
+    const target = parseInt(el.dataset.target, 10);
+    const dur    = 1500;
+    const start  = performance.now();
+    function update(now) {
+      const pct = Math.min((now - start) / dur, 1);
+      const ease = 1 - Math.pow(1 - pct, 3);
+      el.textContent = Math.round(ease * target);
+      if (pct < 1) requestAnimationFrame(update);
+    }
+    requestAnimationFrame(update);
+  });
+}
+
+/* ── SECTION NAVIGATION ── */
+(function () {
+  const tabs     = document.querySelectorAll('.nav-tab');
+  const sections = document.querySelectorAll('.ws-section');
+  const statusEl = document.getElementById('status-msg');
+
+  function activate(id) {
+    tabs.forEach(t => t.classList.toggle('active', t.dataset.section === id));
+    sections.forEach(s => {
+      const active = s.id === id;
+      s.classList.toggle('active', active);
+    });
+
+    // Special side effects
+    if (id === 'overview') animateCounters();
+    if (id === 'terminal') {
+      setTimeout(() => document.getElementById('term-input')?.focus(), 100);
+    }
+    if (statusEl) {
+      const labels = {
+        overview: 'SYSTEM OVERVIEW',
+        stack:    'TECHNOLOGY MATRIX',
+        ops:      'OPERATIONAL PROFILE',
+        projects: 'DEPLOYED SYSTEMS',
+        terminal: 'TERMINAL ACTIVE',
+      };
+      statusEl.textContent = labels[id] || 'SYSTEM OPERATIONAL';
+    }
+  }
+
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => activate(tab.dataset.section));
+  });
+
+  // Keyboard shortcuts
+  document.addEventListener('keydown', e => {
+    if (document.activeElement?.id === 'term-input') return;
+    const map = { '1': 'overview', '2': 'stack', '3': 'ops', '4': 'projects', '5': 'terminal' };
+    if (map[e.key]) activate(map[e.key]);
+  });
+
+  // Activate overview on boot
+  window.addEventListener('boot-complete', () => {
+    setTimeout(() => { activate('overview'); animateCounters(); }, 200);
+  });
+})();
+
+/* ── OPS DOMAINS ── */
+(function () {
+  const DOMAINS = [
+    {
+      icon: '⬡',
+      name: 'BACKEND ENGINEERING',
+      tag: 'PRIMARY',
+      tagColor: '#00d9ff',
+      skills: ['Django', 'FastAPI', 'DRF', 'ASGI', 'HTMX', 'REST APIs', 'WebSocket', 'Async Python', 'Clean Architecture', 'API Design'],
+    },
+    {
+      icon: '🔐',
+      name: 'SECURITY ENGINEERING',
+      tag: 'SPECIALIZED',
+      tagColor: '#ff6b35',
+      skills: ['XSS Detection', 'Static Analysis', 'APK Forensics', 'SSL Pinning Bypass', 'OWASP Top 10', 'Threat Hunting', 'C2 Detection', 'Frida', 'reFlutter', 'Vulnerability Scanning'],
+    },
+    {
+      icon: '⚙',
+      name: 'DEVOPS & INFRASTRUCTURE',
+      tag: 'ACTIVE',
+      tagColor: '#00ff88',
+      skills: ['Docker', 'Linux', 'Git', 'CI/CD', 'Process Automation', 'Server Hardening', 'Networking', 'Monitoring', 'PostgreSQL', 'Redis'],
+    },
+    {
+      icon: '📱',
+      name: 'ANDROID DEVELOPMENT',
+      tag: 'LEARNING',
+      tagColor: '#ffd700',
+      skills: ['Kotlin', 'Android SDK', 'Jetpack Components', 'Gradle', 'ADB', 'OTA Systems', 'BroadcastReceiver', 'Android Internals', 'Mobile Security', 'Android Studio'],
+    },
+  ];
+
+  function renderOps() {
+    const container = document.getElementById('ops-domains');
+    if (!container) return;
+
+    DOMAINS.forEach(d => {
+      const div = document.createElement('div');
+      div.className = 'ops-domain';
+
+      const skillsHtml = d.skills.map(s => `<span class="ops-skill">${s}</span>`).join('');
+      div.innerHTML = `
+        <div class="ops-domain-header">
+          <span class="ops-domain-icon">${d.icon}</span>
+          <span class="ops-domain-name">${d.name}</span>
+          <span class="ops-domain-tag" style="color:${d.tagColor};border-color:${d.tagColor}">${d.tag}</span>
+        </div>
+        <div class="ops-skills">${skillsHtml}</div>`;
+
+      container.appendChild(div);
+    });
+  }
+
+  window.addEventListener('boot-complete', () => setTimeout(renderOps, 300));
+})();
+
+</script>
+</body>
+</html>

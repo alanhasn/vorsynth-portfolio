@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="VORSYNTH portfolio — backend engineer, security researcher, and DevOps systems architect." />
+  <meta name="theme-color" content="#050810" />
+  <title>VORSYNTH — System Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Rajdhani:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+</head>
+<body>
+
+<!-- ── BOOT SEQUENCE OVERLAY ── -->
+<div id="boot-overlay">
+  <div id="boot-screen">
+    <div id="boot-logo">
+      <span class="boot-bracket">[</span>
+      <span class="boot-name">VORSYNTH</span>
+      <span class="boot-bracket">]</span>
+    </div>
+    <div id="boot-log"></div>
+    <div id="boot-bar-wrap">
+      <div id="boot-bar"></div>
+      <span id="boot-pct">0%</span>
+    </div>
+    <div id="boot-status">INITIALIZING SYSTEM...</div>
+    <div id="boot-actions">
+      <button id="skip-boot" class="boot-btn" type="button">SKIP BOOT</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── SCAN LINE EFFECT ── -->
+<div id="scanlines"></div>
+
+<!-- ── CURSOR ── -->
+<div id="cursor"></div>
+<div id="cursor-trail"></div>
+
+<!-- ── BACKGROUND GRID ── -->
+<canvas id="bg-canvas"></canvas>
+
+<!-- ── TOP STATUSBAR ── -->
+<header id="statusbar">
+  <div class="sb-left">
+    <span class="sb-tag">VORSYNTH</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item blink-dot">● ONLINE</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item">SYS v2.4.1</span>
+  </div>
+  <div class="sb-center">
+      <nav id="nav-tabs" role="navigation" aria-label="Workspace sections">
+      <button class="nav-tab active" data-section="overview" aria-selected="true">OVERVIEW</button>
+      <button class="nav-tab" data-section="stack" aria-selected="false">STACK</button>
+      <button class="nav-tab" data-section="ops" aria-selected="false">OPS</button>
+      <button class="nav-tab" data-section="projects" aria-selected="false">SYSTEMS</button>
+      <button class="nav-tab" data-section="terminal" aria-selected="false">TERMINAL</button>
+    </nav>
+  </div>
+  <div class="sb-right">
+    <span class="sb-item" id="live-time"></span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item">UTC+3</span>
+    <span class="sb-sep">|</span>
+    <span class="sb-item cpu-meter">CPU <span id="cpu-val">--</span>%</span>
+  </div>
+</header>
+
+<!-- ── MAIN WORKSPACE ── -->
+<main id="workspace">
+
+  <!-- ═══ SECTION: OVERVIEW ═══ • -->
+  <section id="overview" class="ws-section active">
+    <div class="overview-grid">
+
+      <!-- Identity panel -->
+      <div class="panel panel-identity" data-panel="identity">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>IDENTITY.SYS</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="identity-name">
+            <span class="id-pre">~$ </span>
+            <span class="id-text typewriter" data-text="VORSYNTH">VORSYNTH</span>
+          </div>
+          <div class="identity-roles">
+            <div class="role-line"><span class="role-key">ROLE</span><span class="role-val">Backend Engineer · DevOps · Security</span></div>
+            <div class="role-line"><span class="role-key">SPEC</span><span class="role-val">Distributed Systems · API Architecture</span></div>
+            <div class="role-line"><span class="role-key">INT</span><span class="role-val">Reverse Engineering · Android Internals</span></div>
+            <div class="role-line"><span class="role-key">PHI</span><span class="role-val">Security-first · Deep over surface</span></div>
+          </div>
+          <div class="identity-status">
+            <span class="status-chip active">● AVAILABLE</span>
+            <span class="status-chip">⬡ REMOTE</span>
+            <span class="status-chip">⚑ BACKEND</span>
+          </div>
+          <div class="identity-summary">
+            Backend systems architect focused on distributed APIs, security tooling, and resilient production infrastructure. Available for senior engineering and architecture work.
+          </div>
+          <div class="identity-actions">
+            <a href="https://github.com/alanhasn" target="_blank" rel="noopener noreferrer" class="action-btn">GitHub</a>
+            <a href="https://pypi.org/user/alanhasn" target="_blank" rel="noopener noreferrer" class="action-btn">PyPI</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Telemetry panel -->
+      <div class="panel panel-telemetry" data-panel="telemetry">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>SYS.TELEMETRY</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="telem-grid">
+            <div class="telem-item">
+              <div class="telem-label">PROJECTS</div>
+              <div class="telem-value counter" data-target="12">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:80%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">COMMITS</div>
+              <div class="telem-value counter" data-target="312">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:62%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">TOOLS PUBLISHED</div>
+              <div class="telem-value counter" data-target="2">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:40%"></div></div>
+            </div>
+            <div class="telem-item">
+              <div class="telem-label">UPTIME</div>
+              <div class="telem-value" id="uptime-val">365d</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:100%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Activity feed -->
+      <div class="panel panel-activity" data-panel="activity">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>ACTIVITY.LOG</span>
+          <span class="live-badge">LIVE</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div id="activity-feed"></div>
+        </div>
+      </div>
+
+      <!-- Network map -->
+      <div class="panel panel-network" data-panel="network">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>NETWORK.MAP</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <canvas id="network-canvas"></canvas>
+          <div class="network-legend">
+            <span class="leg-item"><span class="leg-dot" style="--c:#00d9ff"></span>CORE</span>
+            <span class="leg-item"><span class="leg-dot" style="--c:#00ff88"></span>SERVICE</span>
+            <span class="leg-item"><span class="leg-dot" style="--c:#ff6b35"></span>SECURITY</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Philosophy -->
+      <div class="panel panel-philosophy" data-panel="philosophy">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>CORE.DIRECTIVES</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="directive-list">
+            <div class="directive"><span class="dir-n">01</span><span class="dir-t">Security is architecture — not a feature bolted on later</span></div>
+            <div class="directive"><span class="dir-n">02</span><span class="dir-t">Read the source. The docs lie. The code does not.</span></div>
+            <div class="directive"><span class="dir-n">03</span><span class="dir-t">Understand the protocol before touching the library</span></div>
+            <div class="directive"><span class="dir-n">04</span><span class="dir-t">Break systems deliberately. Fix with precision.</span></div>
+            <div class="directive"><span class="dir-n">05</span><span class="dir-t">Automate the repeatable. Think harder on the novel.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel panel-status" data-panel="status">
+        <div class="panel-header">
+          <span class="panel-icon">▸</span>
+          <span>SYSTEM.STATUS</span>
+          <div class="panel-dots"><span></span><span></span><span></span></div>
+        </div>
+        <div class="panel-body">
+          <div class="status-grid">
+            <div class="status-card">
+              <div class="status-card-label">GITHUB REPOSITORIES</div>
+              <div class="status-card-value" id="gh-repo-count">--</div>
+              <div class="status-card-note">Public repos updated in real time</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">TOTAL STARS</div>
+              <div class="status-card-value" id="gh-stars">--</div>
+              <div class="status-card-note">All starred open-source contributions</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">LATEST PUSH</div>
+              <div class="status-card-value" id="gh-latest-push">--</div>
+              <div class="status-card-note">Live commit activity from GitHub</div>
+            </div>
+            <div class="status-card">
+              <div class="status-card-label">OPEN ISSUE SIGNAL</div>
+              <div class="status-card-value" id="gh-open-issues">--</div>
+              <div class="status-card-note">Open issues across active repos</div>
+            </div>
+          </div>
+          <div class="status-snapshot">
+            <div class="status-snapshot-title">Deployment health</div>
+            <div class="status-row"><span>Live services</span><span id="deploy-live">--</span></div>
+            <div class="status-row"><span>Average uptime</span><span id="deploy-uptime">--</span></div>
+            <div class="status-row"><span>Recent GitHub activity</span><span id="deploy-activity">--</span></div>
+          </div>
+          <div class="status-event-list" id="gh-event-list"></div>
+          <a class="panel-link" href="status.html">Open full system status</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: STACK ═══ -->
+  <section id="stack" class="ws-section">
+    <div class="stack-layout">
+      <div class="stack-header">
+        <h2 class="section-title">TECHNOLOGY MATRIX</h2>
+        <p class="section-sub">Runtime environment · Registered modules</p>
+      </div>
+      <div class="stack-grid" id="stack-grid"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: OPS ═══ -->
+  <section id="ops" class="ws-section">
+    <div class="ops-layout">
+      <div class="ops-header">
+        <h2 class="section-title">OPERATIONAL PROFILE</h2>
+        <p class="section-sub">Engineering roles · Domain expertise</p>
+      </div>
+      <div class="ops-domains" id="ops-domains"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: PROJECTS / SYSTEMS ═══ -->
+  <section id="projects" class="ws-section">
+    <div class="projects-layout">
+      <div class="proj-header">
+        <h2 class="section-title">DEPLOYED SYSTEMS</h2>
+        <p class="section-sub">Active infrastructure · Production services</p>
+      </div>
+      <div class="proj-grid" id="proj-grid"></div>
+    </div>
+  </section>
+
+  <!-- ═══ SECTION: TERMINAL ═══ -->
+  <section id="terminal" class="ws-section">
+    <div class="terminal-layout">
+      <div class="term-header-bar">
+        <span class="term-dot red"></span>
+        <span class="term-dot yellow"></span>
+        <span class="term-dot green"></span>
+        <span class="term-title">vorsynth@backend:~</span>
+      </div>
+      <div id="term-output"></div>
+      <div class="term-input-row">
+        <span class="term-prompt">vorsynth@backend:~$ </span>
+        <input type="text" id="term-input" autocomplete="off" spellcheck="false" placeholder="type 'help' to begin" />
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ── BOTTOM STATUS BAR ── -->
+<footer id="footerbar">
+  <div class="fb-left">
+    <span class="fb-item">⬡ BACKEND</span>
+    <span class="fb-sep">·</span>
+    <span class="fb-item">⬡ SECURITY</span>
+    <span class="fb-sep">·</span>
+    <span class="fb-item">⬡ DEVOPS</span>
+  </div>
+  <div class="fb-center">
+    <span id="status-msg" aria-live="polite">SYSTEM OPERATIONAL</span>
+  </div>
+  <div class="fb-right">
+    <a href="https://github.com/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">GITHUB</a>
+    <span class="fb-sep">·</span>
+    <a href="https://pypi.org/user/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">PYPI</a>
+    <span class="fb-sep">·</span>
+    <a href="status.html" class="fb-link">STATUS</a>
+    <span class="fb-sep">·</span>
+    <a href="https://github.com/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">RESUME</a>
+  </div>
+</footer>
+
+<script src="js/boot.js"></script>
+<script src="js/canvas.js"></script>
+<script src="js/network.js"></script>
+<script src="js/activity.js"></script>
+<script src="js/stack.js"></script>
+<script src="js/projects.js"></script>
+<script src="js/terminal.js"></script>
+<script src="js/status.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
