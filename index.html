@@ -67,6 +67,15 @@
     <span class="sb-sep">|</span>
     <span class="sb-item cpu-meter">CPU <span id="cpu-val">--</span>%</span>
   </div>
+  <button id="mobile-menu-toggle" class="menu-btn" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Open navigation menu">☰</button>
+  <div id="mobile-menu" class="mobile-menu" aria-hidden="true">
+    <button class="mobile-menu-link nav-tab active" data-section="overview" type="button">OVERVIEW</button>
+    <button class="mobile-menu-link nav-tab" data-section="stack" type="button">STACK</button>
+    <button class="mobile-menu-link nav-tab" data-section="ops" type="button">OPS</button>
+    <button class="mobile-menu-link nav-tab" data-section="projects" type="button">SYSTEMS</button>
+    <button class="mobile-menu-link nav-tab" data-section="terminal" type="button">TERMINAL</button>
+    <a class="mobile-menu-link" href="status.html">SYSTEM STATUS</a>
+  </div>
 </header>
 
 <!-- ── MAIN WORKSPACE ── -->
@@ -315,6 +324,7 @@
 <script src="js/stack.js"></script>
 <script src="js/projects.js"></script>
 <script src="js/terminal.js"></script>
+<script src="js/mobile-menu.js"></script>
 <script src="js/status.js"></script>
 <script src="js/main.js"></script>
 </body>

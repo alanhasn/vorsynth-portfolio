@@ -7,10 +7,10 @@
   const cur   = document.getElementById('cursor');
   const trail = document.getElementById('cursor-trail');
   const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+  const supportsFinePointer = window.matchMedia('(pointer:fine)').matches;
   let tx = 0, ty = 0, cx = 0, cy = 0;
 
-  if (prefersReducedMotion || !cur || !trail || isTouch) return;
+  if (prefersReducedMotion || !cur || !trail || !supportsFinePointer) return;
 
   document.addEventListener('mousemove', e => {
     tx = e.clientX; ty = e.clientY;
