@@ -129,13 +129,13 @@
           <div class="telem-grid">
             <div class="telem-item">
               <div class="telem-label">PROJECTS</div>
-              <div class="telem-value counter" data-target="12">0</div>
-              <div class="telem-bar"><div class="telem-fill" style="--pct:80%"></div></div>
+              <div class="telem-value counter" id="telem-projects" data-target="0">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:4%"></div></div>
             </div>
             <div class="telem-item">
-              <div class="telem-label">COMMITS</div>
-              <div class="telem-value counter" data-target="312">0</div>
-              <div class="telem-bar"><div class="telem-fill" style="--pct:62%"></div></div>
+              <div class="telem-label">STARS</div>
+              <div class="telem-value counter" id="telem-stars" data-target="0">0</div>
+              <div class="telem-bar"><div class="telem-fill" style="--pct:4%"></div></div>
             </div>
             <div class="telem-item">
               <div class="telem-label">TOOLS PUBLISHED</div>
@@ -143,8 +143,8 @@
               <div class="telem-bar"><div class="telem-fill" style="--pct:40%"></div></div>
             </div>
             <div class="telem-item">
-              <div class="telem-label">UPTIME</div>
-              <div class="telem-value" id="uptime-val">365d</div>
+              <div class="telem-label">GH ACCOUNT AGE</div>
+              <div class="telem-value" id="uptime-val">--</div>
               <div class="telem-bar"><div class="telem-fill" style="--pct:100%"></div></div>
             </div>
           </div>
@@ -230,8 +230,8 @@
           </div>
           <div class="status-snapshot">
             <div class="status-snapshot-title">Deployment health</div>
-            <div class="status-row"><span>Live services</span><span id="deploy-live">--</span></div>
-            <div class="status-row"><span>Average uptime</span><span id="deploy-uptime">--</span></div>
+            <div class="status-row"><span>Repos active (90d)</span><span id="deploy-live">--</span></div>
+            <div class="status-row"><span>Active ratio</span><span id="deploy-uptime">--</span></div>
             <div class="status-row"><span>Recent GitHub activity</span><span id="deploy-activity">--</span></div>
           </div>
           <div class="status-event-list" id="gh-event-list"></div>
@@ -272,6 +272,7 @@
         <p class="section-sub">Active infrastructure · Production services</p>
       </div>
       <div class="proj-grid" id="proj-grid"></div>
+      <a class="panel-link" href="https://github.com/alanhasn?tab=repositories" target="_blank" rel="noopener noreferrer">View all repositories on GitHub ↗</a>
     </div>
   </section>
 
@@ -312,8 +313,6 @@
     <a href="https://pypi.org/user/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">PYPI</a>
     <span class="fb-sep">·</span>
     <a href="status.html" class="fb-link">STATUS</a>
-    <span class="fb-sep">·</span>
-    <a href="https://github.com/alanhasn" target="_blank" rel="noopener noreferrer" class="fb-link">RESUME</a>
   </div>
 </footer>
 

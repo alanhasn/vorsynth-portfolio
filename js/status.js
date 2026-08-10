@@ -37,22 +37,12 @@ function parseGithubEvents(events) {
   });
 }
 
-function parseUptimeValue(text) {
-  if (typeof text !== 'string') return null;
-  const match = text.match(/(\d+(?:\.\d+)?)%/);
-  return match ? Number(match[1]) : null;
-}
-
-function buildDeployHealth(projects) {
-  const list = Array.isArray(projects) ? projects : [];
+function buildDeployHealth(repos) {
+  const list = Array.isArray(repos) ? repos.filter(r => !r.fork) : [];
   const totalSystems = list.length;
-  const liveSystems = list.filter(p => p.status === 'online').length;
-  const healthNumbers = list
-    .map(p => parseUptimeValue(p.uptime))
-    .filter(n => typeof n === 'number');
-  const averageUptime = healthNumbers.length
-    ? `${(healthNumbers.reduce((sum, n) => sum + n, 0) / healthNumbers.length).toFixed(1)}%`
-    : '99.1%';
+  const activeCutoff = Date.now() - 90 * 86400000;
+  const liveSystems = list.filter(r => r.pushed_at && new Date(r.pushed_at).getTime() > activeCutoff).length;
+  const averageUptime = totalSystems ? `${Math.round((liveSystems / totalSystems) * 100)}%` : '--';
   return { totalSystems, liveSystems, averageUptime };
 }
 
@@ -97,27 +87,7 @@ function renderRepoList(repos) {
   });
 }
 
-function renderDeploySystems(projects) {
-  const container = document.getElementById('deploy-system-list');
-  if (!container) return;
-  const list = Array.isArray(projects) ? projects : [];
-  container.innerHTML = '';
-  list.filter(p => p.status === 'online' || p.status === 'active').slice(0, 6).forEach(project => {
-    const card = document.createElement('div');
-    card.className = 'repo-card';
-    card.innerHTML = `
-      <div class="repo-card-title">${project.name}</div>
-      <div class="repo-card-desc">${project.desc}</div>
-      <div class="repo-card-meta">
-        <span>${project.statusLabel}</span>
-        <span>${project.uptime}</span>
-      </div>
-    `;
-    container.appendChild(card);
-  });
-}
-
-function renderGithubStatus(data, projects) {
+function renderGithubStatus(data) {
   setText('gh-repo-count', formatNumber(data.repoCount));
   setText('gh-stars', formatNumber(data.stars));
   setText('gh-open-issues', formatNumber(data.openIssues));
@@ -127,12 +97,9 @@ function renderGithubStatus(data, projects) {
   setText('deploy-activity', data.activityLabel);
   renderEventList(data.events);
   renderRepoList(data.topRepos);
-  renderDeploySystems(projects);
 }
 
 async function loadGitHubStatus() {
-  const projects = Array.isArray(window.PROJECTS) ? window.PROJECTS : [];
-  const health = buildDeployHealth(projects);
   const state = {
     repoCount: '--',
     stars: '--',
@@ -140,9 +107,9 @@ async function loadGitHubStatus() {
     latestPush: '--',
     events: [{ type: 'IDLE', msg: 'Waiting for GitHub response', time: '--' }],
     topRepos: [],
-    liveSystems: health.liveSystems,
-    totalSystems: health.totalSystems,
-    averageUptime: health.averageUptime,
+    liveSystems: '--',
+    totalSystems: '--',
+    averageUptime: '--',
     activityLabel: 'Loading GitHub activity',
   };
 
@@ -160,7 +127,14 @@ async function loadGitHubStatus() {
       state.openIssues = repoList.reduce((sum, repo) => sum + (repo.open_issues_count || 0), 0);
       const latest = repoList.find(repo => repo.pushed_at);
       state.latestPush = latest ? `${latest.name} · ${relativeTime(latest.pushed_at)}` : '--';
-      state.topRepos = repoList.sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
+      state.topRepos = repoList
+        .filter(r => !r.fork && r.name.toLowerCase() !== GITHUB_OWNER.toLowerCase() && r.description)
+        .sort((a, b) => (b.stargazers_count || 0) - (a.stargazers_count || 0));
+
+      const health = buildDeployHealth(repoList);
+      state.liveSystems = health.liveSystems;
+      state.totalSystems = health.totalSystems;
+      state.averageUptime = health.averageUptime;
     }
 
     if (eventsResp.ok) {
@@ -175,7 +149,7 @@ async function loadGitHubStatus() {
     state.activityLabel = 'Offline';
   }
 
-  renderGithubStatus(state, projects);
+  renderGithubStatus(state);
 }
 
 window.addEventListener('DOMContentLoaded', () => {

@@ -706,6 +706,16 @@ input { background: transparent; }
 ══════════════════════════════ */
 .projects-layout { display: flex; flex-direction: column; gap: 24px; }
 .proj-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 12px; }
+.proj-empty {
+  grid-column: 1 / -1;
+  padding: 40px 20px;
+  text-align: center;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  color: var(--text-mid);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+}
 
 .proj-card {
   background: var(--bg-panel);
