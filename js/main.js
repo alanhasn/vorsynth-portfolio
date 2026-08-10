@@ -209,7 +209,7 @@ function animateCounters() {
       icon: '📱',
       name: 'ANDROID DEVELOPMENT',
       tag: 'LEARNING',
-      tagColor: '#ffd700',
+      tagColor: '#f2c14e',
       skills: ['Kotlin', 'Android SDK', 'Jetpack Components', 'Gradle', 'ADB', 'OTA Systems', 'BroadcastReceiver', 'Android Internals', 'Mobile Security', 'Android Studio'],
     },
   ];

@@ -35,6 +35,7 @@ function bootSequence() {
   let timeoutId = 0;
 
   function finishBoot() {
+    sessionStorage.setItem('vorsynth-booted', '1');
     overlay.classList.add('hidden');
     window.dispatchEvent(new Event('boot-complete'));
   }
@@ -43,6 +44,18 @@ function bootSequence() {
     clearTimeout(timeoutId);
     statusEl.textContent = 'BOOT SKIPPED — LAUNCHING INTERFACE';
     finishBoot();
+  }
+
+  const skipBtn = document.getElementById('skip-boot');
+  skipBtn?.addEventListener('click', stopBoot);
+
+  // Returning within the same tab session: don't replay the full sequence.
+  if (sessionStorage.getItem('vorsynth-booted') === '1') {
+    statusEl.textContent = 'WELCOME BACK — RESUMING SESSION';
+    barEl.style.setProperty('--progress', '100%');
+    pctEl.textContent = '100%';
+    timeoutId = window.setTimeout(finishBoot, 350);
+    return;
   }
 
   function addLine() {
@@ -73,9 +86,6 @@ function bootSequence() {
     const delay = lineIdx < 4 ? 120 : lineIdx < 10 ? 80 : lineIdx < 16 ? 60 : 150;
     timeoutId = window.setTimeout(addLine, delay + Math.random() * 40);
   }
-
-  const skipBtn = document.getElementById('skip-boot');
-  skipBtn?.addEventListener('click', stopBoot);
 
   // Small pause before starting
   timeoutId = window.setTimeout(addLine, 400);
